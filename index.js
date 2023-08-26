@@ -17,11 +17,6 @@ const checkInterval = 13000; // Intervalle en millisecondes (par exemple, 1 minu
 
 client.once('ready', () => {
   console.log(`Logged in as ${client.user.tag}`);
-  if (!channelId) {
-    performCheck();
-  } else {
-    console.log(channelId);
-  }
 });
 
 const prefix = '!'; // Préfixe des commandes
@@ -66,18 +61,19 @@ async function performCheck() {
 
      // Réutilisez l'instance du navigateur s'il existe
      if (!browserInstance) {
-        browserInstance = await puppeteer.launch({
-            executablePath: '/app/.apt/usr/bin/google-chrome',
+        browser = await puppeteer.launch({
+            // executablePath: '/app/.apt/usr/bin/google-chrome',
             headless: "new",
             args: [
-                '--no-sandbox',
+                // '--no-sandbox',
                 '--disable-setuid-sandbox',
               ],
             'ignoreHTTPSErrors': true
         });
+        pageInstance = await browser.newPage();
     }
 
-    await checkChanges(browserInstance);
+    await checkChanges(pageInstance);
   
     // Planifier la prochaine vérification après un délai
     setTimeout(performCheck, checkInterval);
@@ -93,10 +89,7 @@ function formatPhaseName(phaseName) {
     return formattedName.replace(/[^a-zA-Z0-9_]/g, '');
 }
 
-async function checkChanges(browser) {
-    
-    const page = await browser.newPage();
-  
+async function checkChanges(page) {
     const url = 'https://tickets.rugbyworldcup.com/fr';
     await page.goto(url, { waitUntil: 'domcontentloaded' });
   
