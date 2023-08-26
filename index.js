@@ -11,11 +11,24 @@ const checkInterval = 13000; // Intervalle en millisecondes (par exemple, 1 minu
 
 client.once('ready', () => {
   console.log(`Logged in as ${client.user.tag}`);
+  performCheck();
 });
 
 const prefix = '!'; // Préfixe des commandes
 
 const serverInfo = new Map(); // Serveur ID -> Informations
+
+const browserPromise = puppeteer.launch({
+    // executablePath: '/app/.apt/usr/bin/google-chrome',
+    headless: "new",
+    args: [
+        // '--no-sandbox',
+        '--disable-setuid-sandbox',
+      ],
+    'ignoreHTTPSErrors': true
+});
+
+let browserInstance = null;
 
 client.on('messageCreate', async message => {
     if (message.author.bot) return; // Ignorer les messages des bots
@@ -33,12 +46,10 @@ client.on('messageCreate', async message => {
             activeCheck: true,
             channelId: message.channel.id,
             userMention: `<@${message.author.id}>`,
-            browserInstance: null,
           });
 
         console.log('Recherche de billets commencée.');
         message.reply('Recherche de billets commencée.');
-        performCheck();
     } else if (command === 'stop') {
         if (!serverInfo.has(message.guild.id)) {
             return message.reply('Aucune recherche active à arrêter.') && console.log('Aucune recherche active à arrêter.');
@@ -51,23 +62,19 @@ client.on('messageCreate', async message => {
 });
 
 async function performCheck() {
+    if (!browserInstance) {
+        browserInstance = await browserPromise;
+    }
 
-    serverInfo.forEach(async (info, serverId) => {
+    const changes = await findChanges(browserInstance);
+
+    serverInfo.forEach(async (info) => {
         if (info.activeCheck) {
-          // Réutilisez l'instance du navigateur s'il existe
-          if (!info.browserInstance) {
-            info.browserInstance = await puppeteer.launch({
-                executablePath: '/app/.apt/usr/bin/google-chrome',
-                headless: "new",
-                args: [
-                    '--no-sandbox',
-                    '--disable-setuid-sandbox',
-                  ],
-                'ignoreHTTPSErrors': true
-            });
-          }
-    
-          await checkChanges(info);
+            const channel = await client.channels.fetch(info.channelId);
+
+            if (changes.length > 0) {
+                await sendChangeMessages(channel, info.userMention, changes);
+            }
         }
     });
   
@@ -85,9 +92,51 @@ function formatPhaseName(phaseName) {
     return formattedName.replace(/[^a-zA-Z0-9_]/g, '');
 }
 
-async function checkChanges(info) {
-    
-    const page = await info.browserInstance.newPage();
+async function sendChangeMessages(channel, userMention, changes) {
+
+    // Envoi des changements dans le salon Discord s'il y en a
+    if (changes.length > 0) {
+        const changesMessageName = changes.map(match => {
+            const teams = match.teams.join('_').toLowerCase();
+            return `/${teams}`;
+        }).join('\n');
+
+        const changesMessageLink = changes.map(match => {
+            const teams = match.teams.join('_').toLowerCase(); // Génère "equipe1_equipe2"
+            const teamsFormatted = formatPhaseName(teams)
+            const name = formatPhaseName(match.nameMatch);
+            let reventeLink = '';
+
+            if (teams.includes('vainqueur' || 'finaliste')) {
+                // Gérer les liens pour les phases finales (quart de finale, demi-finale, finale)
+                reventeLink = `/revente_${name}`;
+            } else {
+                // Gérer les liens pour les matchs de poule
+                reventeLink = `/revente_${teamsFormatted}`;
+            }
+            return "https://tickets.rugbyworldcup.com" + reventeLink;
+        }).join('\n');
+
+        console.log(changesMessageName);
+
+        const embed = new MessageEmbed()
+        .setColor(0x00FF00)
+        .setTitle('Nouveau billet')
+        .setURL(changesMessageLink)
+        .setDescription("Un billet a été mis en vente à l'instant !")
+        .addFields(
+            { name: 'Equipes', value: `**${changesMessageName}**` },
+        )
+        .setTimestamp()
+
+        channel.send(`${userMention} Voici les changements détectés :`)
+        channel.send({ embeds: [embed] });
+    }
+}
+
+
+async function findChanges(browser) {
+    const page = await browser.newPage();
   
     const url = 'https://tickets.rugbyworldcup.com/fr';
     await page.goto(url, { waitUntil: 'domcontentloaded' });
@@ -148,50 +197,12 @@ async function checkChanges(info) {
     console.log("________________");
     console.log("________________");
 
-    // Envoi des changements dans le salon Discord s'il y en a
-    if (changes.length > 0) {
-        const changesMessageName = changes.map(match => {
-            const teams = match.teams.join('_').toLowerCase();
-            return `/${teams}`;
-        }).join('\n');
+    return changes;
 
-        const changesMessageLink = changes.map(match => {
-            const teams = match.teams.join('_').toLowerCase(); // Génère "equipe1_equipe2"
-            const teamsFormatted = formatPhaseName(teams)
-            const name = formatPhaseName(match.nameMatch);
-            let reventeLink = '';
-    
-            if (teams.includes('vainqueur' || 'finaliste')) {
-                // Gérer les liens pour les phases finales (quart de finale, demi-finale, finale)
-                reventeLink = `/revente_${name}`;
-            } else {
-                // Gérer les liens pour les matchs de poule
-                reventeLink = `/revente_${teamsFormatted}`;
-            }
-            return "https://tickets.rugbyworldcup.com" + reventeLink;
-        }).join('\n');
-
-        const channel = await client.channels.fetch(info.channelId);
-
-        console.log(changesMessageName);
-
-        const embed = new MessageEmbed()
-	    .setColor(0x00FF00)
-	    .setTitle('Nouveau billet')
-	    .setURL(changesMessageLink)
-	    .setDescription("Un billet a été mis en vente à l'instant !")
-	    .addFields(
-		    { name: 'Equipes', value: `**${changesMessageName}**` },
-	    )
-	    .setTimestamp()
-
-        channel.send(`${info.userMention} Voici les changements détectés :`)
-        channel.send({ embeds: [embed] });
-    }
   } catch (error) {
     console.error("Une erreur s'est produite", error);
-    if (!info.browserInstance.isConnected()) {
-        await info.browserInstance.close();
+    if (!browserInstance.isConnected()) {
+        await browserInstance.close();
     }
   }
   finally {
