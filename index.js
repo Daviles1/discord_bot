@@ -73,6 +73,7 @@ function formatPhaseName(phaseName) {
 async function checkChanges() {
     
     const getBrowser = () => puppeteer.launch({
+        executablePath: '/app/.apt/usr/bin/google-chrome',
         headless: "new",
         args: ["--disable-setuid-sandbox"],
 	    'ignoreHTTPSErrors': true
