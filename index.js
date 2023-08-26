@@ -61,7 +61,7 @@ async function performCheck() {
 
      // Réutilisez l'instance du navigateur s'il existe
      if (!browserInstance) {
-        browser = await puppeteer.launch({
+        browserInstance = await puppeteer.launch({
             executablePath: '/app/.apt/usr/bin/google-chrome',
             headless: "new",
             args: [
@@ -70,10 +70,9 @@ async function performCheck() {
               ],
             'ignoreHTTPSErrors': true
         });
-        pageInstance = await browser.newPage();
     }
 
-    await checkChanges(pageInstance);
+    await checkChanges(browserInstance);
   
     // Planifier la prochaine vérification après un délai
     setTimeout(performCheck, checkInterval);
@@ -89,7 +88,10 @@ function formatPhaseName(phaseName) {
     return formattedName.replace(/[^a-zA-Z0-9_]/g, '');
 }
 
-async function checkChanges(page) {
+async function checkChanges(browser) {
+    
+    const page = await browser.newPage();
+  
     const url = 'https://tickets.rugbyworldcup.com/fr';
     await page.goto(url, { waitUntil: 'domcontentloaded' });
   
