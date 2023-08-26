@@ -7,12 +7,6 @@ const fs = require('fs/promises'); // Module pour gérer les fichiers (disponibl
 
 const client = new Client({ intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MESSAGES] });
 
-let activeCheck = false;
-let channelId = null;
-let userMention = null;
-
-let browserInstance = null;
-
 const checkInterval = 13000; // Intervalle en millisecondes (par exemple, 1 minute)
 
 client.once('ready', () => {
@@ -20,6 +14,8 @@ client.once('ready', () => {
 });
 
 const prefix = '!'; // Préfixe des commandes
+
+const serverInfo = new Map(); // Serveur ID -> Informations
 
 client.on('messageCreate', async message => {
     if (message.author.bot) return; // Ignorer les messages des bots
@@ -29,50 +25,51 @@ client.on('messageCreate', async message => {
     const command = args.shift().toLowerCase();
 
     if (command === 'start') {
-        if (activeCheck) {
+        if (serverInfo.has(message.guild.id)) {
             return message.reply('La recherche est déjà active.') && console.log('La recherche est déjà active.');
         }
 
-        // Get channel ID and user mention
-        channelId = message.channel.id;
-        userMention = `<@${message.author.id}>`;
+        serverInfo.set(message.guild.id, {
+            activeCheck: true,
+            channelId: message.channel.id,
+            userMention: `<@${message.author.id}>`,
+            browserInstance: null,
+          });
 
-        activeCheck = true;
         console.log('Recherche de billets commencée.');
         message.reply('Recherche de billets commencée.');
         performCheck();
     } else if (command === 'stop') {
-        if (!activeCheck) {
+        if (!serverInfo.has(message.guild.id)) {
             return message.reply('Aucune recherche active à arrêter.') && console.log('Aucune recherche active à arrêter.');
         }
 
-        activeCheck = false;
-        channelId = null;
-        userMention = null;
+        serverInfo.delete(message.guild.id);
         message.reply('Recherche de billets arrêtée.');
         console.log('Recherche de billets arrêtée.');
     }
 });
 
 async function performCheck() {
-    if (!activeCheck || !channelId) {
-        return;
-    }
 
-     // Réutilisez l'instance du navigateur s'il existe
-     if (!browserInstance) {
-        browserInstance = await puppeteer.launch({
-            executablePath: '/app/.apt/usr/bin/google-chrome',
-            headless: "new",
-            args: [
-                '--no-sandbox',
-                '--disable-setuid-sandbox',
-              ],
-            'ignoreHTTPSErrors': true
-        });
-    }
-
-    await checkChanges(browserInstance);
+    serverInfo.forEach(async (info, serverId) => {
+        if (info.activeCheck) {
+          // Réutilisez l'instance du navigateur s'il existe
+          if (!info.browserInstance) {
+            info.browserInstance = await puppeteer.launch({
+                executablePath: '/app/.apt/usr/bin/google-chrome',
+                headless: "new",
+                args: [
+                    '--no-sandbox',
+                    '--disable-setuid-sandbox',
+                  ],
+                'ignoreHTTPSErrors': true
+            });
+          }
+    
+          await checkChanges(info);
+        }
+    });
   
     // Planifier la prochaine vérification après un délai
     setTimeout(performCheck, checkInterval);
@@ -88,9 +85,9 @@ function formatPhaseName(phaseName) {
     return formattedName.replace(/[^a-zA-Z0-9_]/g, '');
 }
 
-async function checkChanges(browser) {
+async function checkChanges(info) {
     
-    const page = await browser.newPage();
+    const page = await info.browserInstance.newPage();
   
     const url = 'https://tickets.rugbyworldcup.com/fr';
     await page.goto(url, { waitUntil: 'domcontentloaded' });
@@ -174,7 +171,7 @@ async function checkChanges(browser) {
             return "https://tickets.rugbyworldcup.com" + reventeLink;
         }).join('\n');
 
-        const channel = await client.channels.fetch(channelId);
+        const channel = await client.channels.fetch(info.channelId);
 
         console.log(changesMessageName);
 
@@ -188,13 +185,13 @@ async function checkChanges(browser) {
 	    )
 	    .setTimestamp()
 
-        channel.send(`${userMention} Voici les changements détectés :`)
+        channel.send(`${info.userMention} Voici les changements détectés :`)
         channel.send({ embeds: [embed] });
     }
   } catch (error) {
     console.error("Une erreur s'est produite", error);
-    if (!browser.isConnected()) {
-        await browser.close();
+    if (!info.browserInstance.isConnected()) {
+        await info.browserInstance.close();
     }
   }
   finally {
