@@ -11,13 +11,10 @@ let activeCheck = false;
 let channelId = null;
 let userMention = null;
 
-const checkInterval = 10000; // Intervalle en millisecondes (par exemple, 1 minute)
+const checkInterval = 13000; // Intervalle en millisecondes (par exemple, 1 minute)
 
 client.once('ready', () => {
   console.log(`Logged in as ${client.user.tag}`);
-
-  // Lancer la surveillance des changements
-//   performCheck();
 });
 
 const prefix = '!'; // Préfixe des commandes
@@ -65,7 +62,9 @@ async function performCheck() {
 
 function formatPhaseName(phaseName) {
     // Supprimer les espaces et convertir en minuscules
-    const formattedName = phaseName.replace(/\s+/g, '_').toLowerCase();
+    let formattedName = phaseName.replace(/\s+/g, '_').toLowerCase();
+
+    formattedName.replace(/é/g, 'e');
 
     // Supprimer les caractères non alphanumériques
     return formattedName.replace(/[^a-zA-Z0-9_]/g, '');
@@ -89,6 +88,11 @@ async function checkChanges() {
     await new Promise(resolve => setTimeout(resolve, 5000));
   
     try {
+
+    if (page.isClosed()) {
+        console.log('La page a été fermée, arrêt de la vérification.');
+        return;
+    }
 
     const matchInfo = await page.evaluate(() => {
         const matchElements = document.querySelectorAll('.match-label'); // Sélectionnez les éléments de match
@@ -145,15 +149,16 @@ async function checkChanges() {
 
         const changesMessageLink = changes.map(match => {
             const teams = match.teams.join('_').toLowerCase(); // Génère "equipe1_equipe2"
+            const teamsFormatted = formatPhaseName(teams)
             const name = formatPhaseName(match.nameMatch);
             let reventeLink = '';
     
-            if (teams.includes('vainqueur')) {
+            if (teams.includes('vainqueur' || 'finaliste')) {
                 // Gérer les liens pour les phases finales (quart de finale, demi-finale, finale)
                 reventeLink = `/revente_${name}`;
             } else {
                 // Gérer les liens pour les matchs de poule
-                reventeLink = `/revente_${teams}`;
+                reventeLink = `/revente_${teamsFormatted}`;
             }
             return "https://tickets.rugbyworldcup.com" + reventeLink;
         }).join('\n');
@@ -182,7 +187,12 @@ async function checkChanges() {
     if (!browser.isConnected()) {
         await browser.close();
     }
-  }
+  } finally {
+        // Fermer le navigateur
+        if (!browser.isConnected()) {
+            await browser.close();
+        }
+    }
 }
 
 client.login(process.env.TOKEN_ID);
