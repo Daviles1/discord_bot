@@ -17,6 +17,9 @@ const checkInterval = 13000; // Intervalle en millisecondes (par exemple, 1 minu
 
 client.once('ready', () => {
   console.log(`Logged in as ${client.user.tag}`);
+  if (!channelId) {
+    performCheck();
+  }
 });
 
 const prefix = '!'; // Préfixe des commandes
