@@ -1,0 +1,386 @@
+[
+  {
+    "teams": [
+      "France",
+      "Nouvelle-Zélande"
+    ],
+    "availability": "Non disponible",
+    "nameMatch": "Poule A"
+  },
+  {
+    "teams": [
+      "Italie",
+      "Namibie"
+    ],
+    "availability": "Voir les offres",
+    "nameMatch": "Poule A"
+  },
+  {
+    "teams": [
+      "Irlande",
+      "Roumanie"
+    ],
+    "availability": "Voir les offres",
+    "nameMatch": "Poule B"
+  },
+  {
+    "teams": [
+      "Australie",
+      "Géorgie"
+    ],
+    "availability": "Voir les offres",
+    "nameMatch": "Poule C"
+  },
+  {
+    "teams": [
+      "Angleterre",
+      "Argentine"
+    ],
+    "availability": "Voir les offres",
+    "nameMatch": "Poule D"
+  },
+  {
+    "teams": [
+      "Japon",
+      "Chili"
+    ],
+    "availability": "Voir les offres",
+    "nameMatch": "Poule D"
+  },
+  {
+    "teams": [
+      "Afrique du Sud",
+      "Ecosse"
+    ],
+    "availability": "Voir les offres",
+    "nameMatch": "Poule B"
+  },
+  {
+    "teams": [
+      "Pays de Galles",
+      "Fidji"
+    ],
+    "availability": "Voir les offres",
+    "nameMatch": "Poule C"
+  },
+  {
+    "teams": [
+      "France",
+      "Uruguay"
+    ],
+    "availability": "Voir les offres",
+    "nameMatch": "Poule A"
+  },
+  {
+    "teams": [
+      "Nouvelle-Zélande",
+      "Namibie"
+    ],
+    "availability": "Voir les offres",
+    "nameMatch": "Poule A"
+  },
+  {
+    "teams": [
+      "Samoa",
+      "Chili"
+    ],
+    "availability": "Voir les offres",
+    "nameMatch": "Poule D"
+  },
+  {
+    "teams": [
+      "Pays de Galles",
+      "Portugal"
+    ],
+    "availability": "Voir les offres",
+    "nameMatch": "Poule C"
+  },
+  {
+    "teams": [
+      "Irlande",
+      "Tonga"
+    ],
+    "availability": "Voir les offres",
+    "nameMatch": "Poule B"
+  },
+  {
+    "teams": [
+      "Afrique du Sud",
+      "Roumanie"
+    ],
+    "availability": "Voir les offres",
+    "nameMatch": "Poule B"
+  },
+  {
+    "teams": [
+      "Australie",
+      "Fidji"
+    ],
+    "availability": "Voir les offres",
+    "nameMatch": "Poule C"
+  },
+  {
+    "teams": [
+      "Angleterre",
+      "Japon"
+    ],
+    "availability": "Voir les offres",
+    "nameMatch": "Poule D"
+  },
+  {
+    "teams": [
+      "Italie",
+      "Uruguay"
+    ],
+    "availability": "Voir les offres",
+    "nameMatch": "Poule A"
+  },
+  {
+    "teams": [
+      "France",
+      "Namibie"
+    ],
+    "availability": "Voir les offres",
+    "nameMatch": "Poule A"
+  },
+  {
+    "teams": [
+      "Argentine",
+      "Samoa"
+    ],
+    "availability": "Voir les offres",
+    "nameMatch": "Poule D"
+  },
+  {
+    "teams": [
+      "Géorgie",
+      "Portugal"
+    ],
+    "availability": "Voir les offres",
+    "nameMatch": "Poule C"
+  },
+  {
+    "teams": [
+      "Angleterre",
+      "Chili"
+    ],
+    "availability": "Voir les offres",
+    "nameMatch": "Poule D"
+  },
+  {
+    "teams": [
+      "Afrique du Sud",
+      "Irlande"
+    ],
+    "availability": "Non disponible",
+    "nameMatch": "Poule B"
+  },
+  {
+    "teams": [
+      "Ecosse",
+      "Tonga"
+    ],
+    "availability": "Voir les offres",
+    "nameMatch": "Poule B"
+  },
+  {
+    "teams": [
+      "Pays de Galles",
+      "Australie"
+    ],
+    "availability": "Voir les offres",
+    "nameMatch": "Poule C"
+  },
+  {
+    "teams": [
+      "Uruguay",
+      "Namibie"
+    ],
+    "availability": "Voir les offres",
+    "nameMatch": "Poule A"
+  },
+  {
+    "teams": [
+      "Japon",
+      "Samoa"
+    ],
+    "availability": "Non disponible",
+    "nameMatch": "Poule D"
+  },
+  {
+    "teams": [
+      "Nouvelle-Zélande",
+      "Italie"
+    ],
+    "availability": "Voir les offres",
+    "nameMatch": "Poule A"
+  },
+  {
+    "teams": [
+      "Argentine",
+      "Chili"
+    ],
+    "availability": "Voir les offres",
+    "nameMatch": "Poule D"
+  },
+  {
+    "teams": [
+      "Fidji",
+      "Géorgie"
+    ],
+    "availability": "Voir les offres",
+    "nameMatch": "Poule C"
+  },
+  {
+    "teams": [
+      "Ecosse",
+      "Roumanie"
+    ],
+    "availability": "Voir les offres",
+    "nameMatch": "Poule B"
+  },
+  {
+    "teams": [
+      "Australie",
+      "Portugal"
+    ],
+    "availability": "Voir les offres",
+    "nameMatch": "Poule C"
+  },
+  {
+    "teams": [
+      "Afrique du Sud",
+      "Tonga"
+    ],
+    "availability": "Voir les offres",
+    "nameMatch": "Poule B"
+  },
+  {
+    "teams": [
+      "Nouvelle-Zélande",
+      "Uruguay"
+    ],
+    "availability": "Voir les offres",
+    "nameMatch": "Poule A"
+  },
+  {
+    "teams": [
+      "France",
+      "Italie"
+    ],
+    "availability": "Voir les offres",
+    "nameMatch": "Poule A"
+  },
+  {
+    "teams": [
+      "Pays de Galles",
+      "Géorgie"
+    ],
+    "availability": "Voir les offres",
+    "nameMatch": "Poule C"
+  },
+  {
+    "teams": [
+      "Angleterre",
+      "Samoa"
+    ],
+    "availability": "Voir les offres",
+    "nameMatch": "Poule D"
+  },
+  {
+    "teams": [
+      "Irlande",
+      "Ecosse"
+    ],
+    "availability": "Non disponible",
+    "nameMatch": "Poule B"
+  },
+  {
+    "teams": [
+      "Japon",
+      "Argentine"
+    ],
+    "availability": "Voir les offres",
+    "nameMatch": "Poule D"
+  },
+  {
+    "teams": [
+      "Tonga",
+      "Roumanie"
+    ],
+    "availability": "Voir les offres",
+    "nameMatch": "Poule B"
+  },
+  {
+    "teams": [
+      "Fidji",
+      "Portugal"
+    ],
+    "availability": "Voir les offres",
+    "nameMatch": "Poule C"
+  },
+  {
+    "teams": [
+      "Vainqueur Poule C",
+      "Second Poule D"
+    ],
+    "availability": "Voir les offres",
+    "nameMatch": "Quart de Finale 1"
+  },
+  {
+    "teams": [
+      "Vainqueur Poule B",
+      "Second Poule A"
+    ],
+    "availability": "Non disponible",
+    "nameMatch": "Quart de Finale 2"
+  },
+  {
+    "teams": [
+      "Vainqueur Poule D",
+      "Second Poule C"
+    ],
+    "availability": "Voir les offres",
+    "nameMatch": "Quart de Finale 3"
+  },
+  {
+    "teams": [
+      "Vainqueur Poule A",
+      "Second Poule B"
+    ],
+    "availability": "Non disponible",
+    "nameMatch": "Quart de Finale 4"
+  },
+  {
+    "teams": [
+      "Vainqueur QF1",
+      "Vainqueur QF2"
+    ],
+    "availability": "Non disponible",
+    "nameMatch": "Demi-Finale 1"
+  },
+  {
+    "teams": [
+      "Vainqueur QF3",
+      "Vainqueur QF4"
+    ],
+    "availability": "Non disponible",
+    "nameMatch": "Demi-Finale 2"
+  },
+  {
+    "teams": [
+      "Finaliste DF1",
+      "Finaliste DF2"
+    ],
+    "availability": "Non disponible",
+    "nameMatch": "Finale de Bronze"
+  },
+  {
+    "teams": [
+      "Vainqueur DF1",
+      "Vainqueur DF2"
+    ],
+    "availability": "Non disponible",
+    "nameMatch": "Finale"
+  }
+]
