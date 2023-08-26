@@ -19,6 +19,8 @@ client.once('ready', () => {
   console.log(`Logged in as ${client.user.tag}`);
   if (!channelId) {
     performCheck();
+  } else {
+    console.log(channelId);
   }
 });
 
