@@ -11,6 +11,8 @@ let activeCheck = false;
 let channelId = null;
 let userMention = null;
 
+let browserInstance = null;
+
 const checkInterval = 13000; // Intervalle en millisecondes (par exemple, 1 minute)
 
 client.once('ready', () => {
@@ -28,7 +30,7 @@ client.on('messageCreate', async message => {
 
     if (command === 'start') {
         if (activeCheck) {
-            return message.reply('La recherche est déjà active.');
+            return message.reply('La recherche est déjà active.') && console.log('La recherche est déjà active.');
         }
 
         // Get channel ID and user mention
@@ -36,17 +38,19 @@ client.on('messageCreate', async message => {
         userMention = `<@${message.author.id}>`;
 
         activeCheck = true;
+        console.log('Recherche de billets commencée.');
         message.reply('Recherche de billets commencée.');
         performCheck();
     } else if (command === 'stop') {
         if (!activeCheck) {
-            return message.reply('Aucune recherche active à arrêter.');
+            return message.reply('Aucune recherche active à arrêter.') && console.log('Aucune recherche active à arrêter.');
         }
 
         activeCheck = false;
         channelId = null;
         userMention = null;
         message.reply('Recherche de billets arrêtée.');
+        console.log('Recherche de billets arrêtée.');
     }
 });
 
@@ -54,7 +58,19 @@ async function performCheck() {
     if (!activeCheck || !channelId) {
         return;
     }
-    await checkChanges();
+
+     // Réutilisez l'instance du navigateur s'il existe
+     if (!browserInstance) {
+        browserInstance = await puppeteer.launch({
+            headless: "new",
+            args: [
+                '--disable-setuid-sandbox',
+              ],
+            'ignoreHTTPSErrors': true
+        });
+    }
+
+    await checkChanges(browserInstance);
   
     // Planifier la prochaine vérification après un délai
     setTimeout(performCheck, checkInterval);
@@ -70,19 +86,8 @@ function formatPhaseName(phaseName) {
     return formattedName.replace(/[^a-zA-Z0-9_]/g, '');
 }
 
-async function checkChanges() {
+async function checkChanges(browser) {
     
-    const getBrowser = () => puppeteer.launch({
-        executablePath: '/app/.apt/usr/bin/google-chrome',
-        headless: "new",
-        args: [
-            '--no-sandbox',
-            '--disable-setuid-sandbox',
-          ],
-	    'ignoreHTTPSErrors': true
-    });
-
-    const browser = await getBrowser();
     const page = await browser.newPage();
   
     const url = 'https://tickets.rugbyworldcup.com/fr';
@@ -146,7 +151,7 @@ async function checkChanges() {
 
     // Envoi des changements dans le salon Discord s'il y en a
     if (changes.length > 0) {
-        const changesMessage = changes.map(match => {
+        const changesMessageName = changes.map(match => {
             const teams = match.teams.join('_').toLowerCase();
             return `/${teams}`;
         }).join('\n');
@@ -169,34 +174,31 @@ async function checkChanges() {
 
         const channel = await client.channels.fetch(channelId);
 
+        console.log(changesMessageName);
+
         const embed = new MessageEmbed()
 	    .setColor(0x00FF00)
 	    .setTitle('Nouveau billet')
 	    .setURL(changesMessageLink)
 	    .setDescription("Un billet a été mis en vente à l'instant !")
 	    .addFields(
-		    { name: 'Equipes', value: changesMessage },
+		    { name: 'Equipes', value: `**${changesMessageName}**` },
 	    )
 	    .setTimestamp()
 
         channel.send(`${userMention} Voici les changements détectés :`)
         channel.send({ embeds: [embed] });
     }
-
-    if (!browser.isConnected()) {
-        await browser.close();
-    }
   } catch (error) {
     console.error("Une erreur s'est produite", error);
     if (!browser.isConnected()) {
         await browser.close();
     }
-  } finally {
-        // Fermer le navigateur
-        if (!browser.isConnected()) {
-            await browser.close();
-        }
-    }
+  }
+  finally {
+    // Fermez la page après avoir récupéré le contenu HTML
+    await page.close();
+}
 }
 
 client.login(process.env.TOKEN_ID);
