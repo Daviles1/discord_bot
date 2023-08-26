@@ -62,10 +62,10 @@ async function performCheck() {
      // Réutilisez l'instance du navigateur s'il existe
      if (!browserInstance) {
         browser = await puppeteer.launch({
-            // executablePath: '/app/.apt/usr/bin/google-chrome',
+            executablePath: '/app/.apt/usr/bin/google-chrome',
             headless: "new",
             args: [
-                // '--no-sandbox',
+                '--no-sandbox',
                 '--disable-setuid-sandbox',
               ],
             'ignoreHTTPSErrors': true
