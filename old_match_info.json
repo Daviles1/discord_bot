@@ -4,7 +4,7 @@
       "France",
       "Nouvelle-Zélande"
     ],
-    "availability": "Non disponible",
+    "availability": "Voir les offres",
     "nameMatch": "Poule A"
   },
   {
@@ -172,7 +172,7 @@
       "Afrique du Sud",
       "Irlande"
     ],
-    "availability": "Non disponible",
+    "availability": "Voir les offres",
     "nameMatch": "Poule B"
   },
   {
@@ -292,7 +292,7 @@
       "Irlande",
       "Ecosse"
     ],
-    "availability": "Non disponible",
+    "availability": "Voir les offres",
     "nameMatch": "Poule B"
   },
   {
@@ -332,7 +332,7 @@
       "Vainqueur Poule B",
       "Second Poule A"
     ],
-    "availability": "Non disponible",
+    "availability": "Voir les offres",
     "nameMatch": "Quart de Finale 2"
   },
   {
@@ -348,7 +348,7 @@
       "Vainqueur Poule A",
       "Second Poule B"
     ],
-    "availability": "Non disponible",
+    "availability": "Voir les offres",
     "nameMatch": "Quart de Finale 4"
   },
   {
@@ -356,7 +356,7 @@
       "Vainqueur QF1",
       "Vainqueur QF2"
     ],
-    "availability": "Non disponible",
+    "availability": "Voir les offres",
     "nameMatch": "Demi-Finale 1"
   },
   {
@@ -364,7 +364,7 @@
       "Vainqueur QF3",
       "Vainqueur QF4"
     ],
-    "availability": "Non disponible",
+    "availability": "Voir les offres",
     "nameMatch": "Demi-Finale 2"
   },
   {
@@ -372,7 +372,7 @@
       "Finaliste DF1",
       "Finaliste DF2"
     ],
-    "availability": "Non disponible",
+    "availability": "Voir les offres",
     "nameMatch": "Finale de Bronze"
   },
   {
@@ -380,7 +380,7 @@
       "Vainqueur DF1",
       "Vainqueur DF2"
     ],
-    "availability": "Non disponible",
+    "availability": "Voir les offres",
     "nameMatch": "Finale"
   }
 ]
