@@ -96,7 +96,7 @@ async function performCheck() {
                     await sendChangeMessages(channel, info.userMention, changes);
                 }
                 else {
-                    console.log("Aucun changement détecté.");
+                    console.log("Aucun changement détecté pour ", info.userMention);
                 }
             }
         });
