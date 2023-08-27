@@ -7,11 +7,12 @@ const fs = require('fs/promises'); // Module pour gérer les fichiers (disponibl
 
 const client = new Client({ intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MESSAGES] });
 
-const checkInterval = 13000; // Intervalle en millisecondes (par exemple, 1 minute)
+const checkInterval = 10000; // Intervalle en millisecondes (par exemple, 1 minute)
 
 client.once('ready', () => {
   console.log(`Logged in as ${client.user.tag}`);
   performCheck();
+  loadServerInfo();
 });
 
 const prefix = '!'; // Préfixe des commandes
@@ -20,7 +21,7 @@ const serverInfo = new Map(); // Serveur ID -> Informations
 
 const browserPromise = puppeteer.launch({
     executablePath: '/app/.apt/usr/bin/google-chrome',
-    headless: false,
+    headless: "new",
     args: [
         '--no-sandbox',
         '--disable-setuid-sandbox',
@@ -49,6 +50,8 @@ client.on('messageCreate', async message => {
             userMention: `<@${message.author.id}>`,
         });
 
+        saveServerInfoToFile();
+
         console.log('Accès à la recherche activé.');
         message.reply('Accès à la recherche activé.');
     } else if (command === 'stop') {
@@ -57,6 +60,9 @@ client.on('messageCreate', async message => {
         }
 
         serverInfo.delete(message.guild.id);
+
+        saveServerInfoToFile();
+
         message.reply('Accès à la recherche désactivée.');
         console.log('Accès à la recherche désactivée.');
     }
@@ -109,7 +115,6 @@ async function findChanges(browserInstance, page) {
         console.log("Page chargée avec succès.");
     } catch (error) {
         console.error("Impossible de reloading : ", error)
-        return [];
     }
   
     // Attendre un certain temps pour que le contenu soit chargé (vous pouvez ajuster le temps)
@@ -168,7 +173,6 @@ async function findChanges(browserInstance, page) {
     } catch (error) {
         await browserInstance.close();
         console.error("Une erreur s'est produite dans findChanges(): ", error);
-        return[];
     }
 }
 
@@ -222,6 +226,37 @@ async function sendChangeMessages(channel, userMention, changes) {
         channel.send(`${userMention} Voici les changements détectés :`)
         channel.send({ embeds: [embed] });
         console.log("Messages envoyés.")
+    }
+}
+
+// Au démarrage du bot, charger les données depuis le fichier JSON
+async function loadServerInfo() {
+    try {
+        const jsonData = await fs.readFile('server_info.json', 'utf-8');
+        const parsedData = JSON.parse(jsonData);
+
+        for (const [serverId, info] of Object.entries(parsedData)) {
+            serverInfo.set(serverId, info);
+        }
+
+        console.log('Données chargées depuis le fichier JSON.');
+    } catch (error) {
+        console.error('Erreur lors du chargement des données depuis le fichier JSON :', error);
+    }
+}
+// Après chaque modification de serverInfo, sauvegarder dans le fichier JSON
+async function saveServerInfoToFile() {
+    const dataToSave = {};
+
+    serverInfo.forEach((info, serverId) => {
+        dataToSave[serverId] = info;
+    });
+
+    try {
+        await fs.writeFile('server_info.json', JSON.stringify(dataToSave, null, 2), 'utf-8');
+        console.log('Données sauvegardées dans le fichier JSON.');
+    } catch (error) {
+        console.error('Erreur lors de la sauvegarde des données dans le fichier JSON :', error);
     }
 }
 
