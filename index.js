@@ -20,15 +20,16 @@ const serverInfo = new Map(); // Serveur ID -> Informations
 
 const browserPromise = puppeteer.launch({
     executablePath: '/app/.apt/usr/bin/google-chrome',
-    headless: "new",
+    headless: false,
     args: [
         '--no-sandbox',
         '--disable-setuid-sandbox',
-      ],
+    ],
     'ignoreHTTPSErrors': true
 });
 
 let browserInstance = null;
+let page = null;
 
 client.on('messageCreate', async message => {
     if (message.author.bot) return; // Ignorer les messages des bots
@@ -39,48 +40,138 @@ client.on('messageCreate', async message => {
 
     if (command === 'start') {
         if (serverInfo.has(message.guild.id)) {
-            return message.reply('La recherche est déjà active.') && console.log('La recherche est déjà active.');
+            return message.reply("L'accès à la recherche est déjà active.") && console.log("L'accès à la recherche est déjà active.");
         }
 
         serverInfo.set(message.guild.id, {
             activeCheck: true,
             channelId: message.channel.id,
             userMention: `<@${message.author.id}>`,
-          });
+        });
 
-        console.log('Recherche de billets commencée.');
-        message.reply('Recherche de billets commencée.');
+        console.log('Accès à la recherche activé.');
+        message.reply('Accès à la recherche activé.');
     } else if (command === 'stop') {
         if (!serverInfo.has(message.guild.id)) {
             return message.reply('Aucune recherche active à arrêter.') && console.log('Aucune recherche active à arrêter.');
         }
 
         serverInfo.delete(message.guild.id);
-        message.reply('Recherche de billets arrêtée.');
-        console.log('Recherche de billets arrêtée.');
+        message.reply('Accès à la recherche désactivée.');
+        console.log('Accès à la recherche désactivée.');
     }
 });
 
 async function performCheck() {
-    if (!browserInstance) {
+    if (!browserInstance || !browserInstance.isConnected()) {
+        console.log("Création de l'instance du browser en cours.");
         browserInstance = await browserPromise;
+        console.log("Fait.");
+    }
+    if (!page || page.isClosed()) {
+        console.log("Création de l'instance de la page.");
+        const url = 'https://tickets.rugbyworldcup.com/fr';
+        page = await browserInstance.newPage();
+        await page.goto(url, { waitUntil: 'networkidle2' });
+        console.log("Fait.");
     }
 
-    const changes = await findChanges(browserInstance);
+    try {
+        console.log("Lancement de la recherche.");
 
-    serverInfo.forEach(async (info) => {
-        if (info.activeCheck) {
-            const channel = await client.channels.fetch(info.channelId);
+        const changes = await findChanges(browserInstance, page);
 
-            if (changes.length > 0) {
-                await sendChangeMessages(channel, info.userMention, changes);
+        serverInfo.forEach(async (info) => {
+            if (info.activeCheck) {
+                const channel = await client.channels.fetch(info.channelId);
+
+                if (changes.length > 0) {
+                    console.log("Envoi des messages à chaque utilisateur Discord.");
+                    await sendChangeMessages(channel, info.userMention, changes);
+                }
+                else {
+                    console.log("Aucun changement détecté.");
+                }
             }
-        }
-    });
+        });
+    } catch (error) {
+        console.error("Une erreur s'est produite dans performCheck()", error);
+    }
   
     // Planifier la prochaine vérification après un délai
     setTimeout(performCheck, checkInterval);
-  }
+}
+
+async function findChanges(browserInstance, page) {
+    try {
+        console.log("Reloading...");
+        await page.reload({ waitUntil: 'networkidle2' });
+        console.log("Page chargée avec succès.");
+    } catch (error) {
+        console.error("Impossible de reloading : ", error)
+        return [];
+    }
+  
+    // Attendre un certain temps pour que le contenu soit chargé (vous pouvez ajuster le temps)
+    await new Promise(resolve => setTimeout(resolve, 8000));
+  
+    try {
+
+    const matchInfo = await page.evaluate(() => {
+        const matchElements = document.querySelectorAll('.match-label'); // Sélectionnez les éléments de match
+        const availabilityElements = document.querySelectorAll('.actions-wrapper .noloader'); 
+        const nameMatches = document.querySelectorAll('.d-lg-none.match-info-mobile .competition-additional')
+
+        const matchInfo = [];
+    
+        for (i=0; i<matchElements.length; i++) {
+            const teamElements = matchElements[i].querySelectorAll('.team'); // Sélectionnez les éléments d'équipe
+            const teams = Array.from(teamElements).map(team => team.textContent.trim());   
+            // Vérifiez la classe pour déterminer l'accessibilité
+            const isAvailable = availabilityElements[i].classList.contains('js-show-offers');
+            const availability = isAvailable ? 'Voir les offres' : 'Non disponible';
+            const nameMatch = nameMatches[i].textContent.trim();
+            matchInfo.push({ teams, availability, nameMatch });
+        }
+    
+        return matchInfo;
+    });
+    
+    // Charger les anciennes informations depuis le fichier JSON (s'il existe)
+    let oldMatchInfo = [];
+    try {
+        const oldMatchInfoJson = await fs.readFile('old_match_info.json', 'utf-8');
+        oldMatchInfo = JSON.parse(oldMatchInfoJson);
+    } catch (error) {
+        // Le fichier n'existe pas ou ne peut pas être lu
+    }
+    
+    // Comparer les nouvelles et anciennes informations pour détecter les changements
+    const changes = matchInfo.filter(newMatch => {
+        const oldMatch = oldMatchInfo.find(oldMatch => JSON.stringify(oldMatch.teams) === JSON.stringify(newMatch.teams));
+        return oldMatch && oldMatch.availability === 'Non disponible' && newMatch.availability === 'Voir les offres';
+    });
+
+    
+    // Stocker les nouvelles informations pour les futures comparaisons
+    await fs.writeFile('old_match_info.json', JSON.stringify(matchInfo, null, 2));
+
+    // Maintenant vous pouvez utiliser $ pour manipuler le HTML
+    console.log("Informations des matchs:", matchInfo);
+    console.log("________________");
+    console.log("________________");
+    console.log("________________");
+    console.log("________________");
+
+    return changes;
+
+    } catch (error) {
+        await page.close();
+        await browserInstance.close();
+        console.error("Une erreur s'est produite dans findChanges(): ", error);
+        return[];
+    }
+}
 
 function formatPhaseName(phaseName) {
     // Supprimer les espaces et convertir en minuscules
@@ -131,84 +222,8 @@ async function sendChangeMessages(channel, userMention, changes) {
 
         channel.send(`${userMention} Voici les changements détectés :`)
         channel.send({ embeds: [embed] });
+        console.log("Messages envoyés.")
     }
-}
-
-
-async function findChanges(browser) {
-    const page = await browser.newPage();
-  
-    const url = 'https://tickets.rugbyworldcup.com/fr';
-    await page.goto(url, { waitUntil: 'domcontentloaded' });
-  
-    // Attendre un certain temps pour que le contenu soit chargé (vous pouvez ajuster le temps)
-    await new Promise(resolve => setTimeout(resolve, 5000));
-  
-    try {
-
-    if (page.isClosed()) {
-        console.log('La page a été fermée, arrêt de la vérification.');
-        return;
-    }
-
-    const matchInfo = await page.evaluate(() => {
-        const matchElements = document.querySelectorAll('.match-label'); // Sélectionnez les éléments de match
-        const availabilityElements = document.querySelectorAll('.actions-wrapper .noloader'); 
-        const nameMatches = document.querySelectorAll('.d-lg-none.match-info-mobile .competition-additional')
-
-        const matchInfo = [];
-    
-        for (i=0; i<matchElements.length; i++) {
-            const teamElements = matchElements[i].querySelectorAll('.team'); // Sélectionnez les éléments d'équipe
-            const teams = Array.from(teamElements).map(team => team.textContent.trim());   
-            // Vérifiez la classe pour déterminer l'accessibilité
-            const isAvailable = availabilityElements[i].classList.contains('js-show-offers');
-            const availability = isAvailable ? 'Voir les offres' : 'Non disponible';
-            const nameMatch = nameMatches[i].textContent.trim();
-            matchInfo.push({ teams, availability, nameMatch });
-        }
-    
-        return matchInfo;
-    });
-    
-    // Charger les anciennes informations depuis le fichier JSON (s'il existe)
-    let oldMatchInfo = [];
-    try {
-        const oldMatchInfoJson = await fs.readFile('old_match_info.json', 'utf-8');
-        oldMatchInfo = JSON.parse(oldMatchInfoJson);
-    } catch (error) {
-        // Le fichier n'existe pas ou ne peut pas être lu
-    }
-    
-    // Comparer les nouvelles et anciennes informations pour détecter les changements
-    const changes = matchInfo.filter(newMatch => {
-        const oldMatch = oldMatchInfo.find(oldMatch => JSON.stringify(oldMatch.teams) === JSON.stringify(newMatch.teams));
-        return oldMatch && oldMatch.availability === 'Non disponible' && newMatch.availability === 'Voir les offres';
-    });
-
-    
-    // Stocker les nouvelles informations pour les futures comparaisons
-    await fs.writeFile('old_match_info.json', JSON.stringify(matchInfo, null, 2));
-
-    // Maintenant vous pouvez utiliser $ pour manipuler le HTML
-    console.log("Informations des matchs:", matchInfo);
-    console.log("________________");
-    console.log("________________");
-    console.log("________________");
-    console.log("________________");
-
-    return changes;
-
-  } catch (error) {
-    console.error("Une erreur s'est produite", error);
-    if (!browserInstance.isConnected()) {
-        await browserInstance.close();
-    }
-  }
-  finally {
-    // Fermez la page après avoir récupéré le contenu HTML
-    await page.close();
-}
 }
 
 client.login(process.env.TOKEN_ID);
