@@ -171,7 +171,6 @@ async function findChanges(browserInstance, page) {
     return changes;
 
     } catch (error) {
-        await browserInstance.close();
         console.error("Une erreur s'est produite dans findChanges(): ", error);
     }
 }
