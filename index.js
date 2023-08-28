@@ -168,7 +168,7 @@ async function sendChangeMessages(channel, userMention, changes) {
                     // Gérer les liens pour les matchs de poule
                     reventeLink = `/revente_${teamsFormatted}`;
                 }
-                return "https://tickets.rugbyworldcup.com/" + reventeLink;
+                return "https://tickets.rugbyworldcup.com" + reventeLink;
             })
     
             console.log(changesMessageName);
