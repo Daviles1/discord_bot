@@ -1,4 +1,5 @@
 const { Client, Intents, MessageEmbed } = require('discord.js')
+const { MongoClient } = require('mongodb');
 const puppeteer = require('puppeteer');
 
 require('dotenv').config()
@@ -7,7 +8,7 @@ const fs = require('fs/promises'); // Module pour gérer les fichiers (disponibl
 
 const client = new Client({ intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MESSAGES] });
 
-const checkInterval = 10000; // Intervalle en millisecondes (par exemple, 1 minute)
+const checkInterval = 20000; // Intervalle en millisecondes (par exemple, 1 minute)
 
 client.once('ready', () => {
   console.log(`Logged in as ${client.user.tag}`);
@@ -15,9 +16,9 @@ client.once('ready', () => {
   loadServerInfo();
 });
 
-const prefix = '!'; // Préfixe des commandes
-
 const serverInfo = new Map(); // Serveur ID -> Informations
+
+const mongoUrl = 'mongodb+srv://David:'+process.env.PASSWORD+'@clusterdiscord.uqld2dy.mongodb.net/?retryWrites=true&w=majority';
 
 const browserPromise = puppeteer.launch({
     executablePath: '/app/.apt/usr/bin/google-chrome',
@@ -25,48 +26,13 @@ const browserPromise = puppeteer.launch({
     args: [
         '--no-sandbox',
         '--disable-setuid-sandbox',
+        '--disable-cache',
     ],
     'ignoreHTTPSErrors': true
 });
 
 let browserInstance = null;
 let page = null;
-
-client.on('messageCreate', async message => {
-    if (message.author.bot) return; // Ignorer les messages des bots
-    if (!message.content.startsWith(prefix)) return; // Ignorer les messages sans préfixe
-
-    const args = message.content.slice(prefix.length).trim().split(/ +/);
-    const command = args.shift().toLowerCase();
-
-    if (command === 'start') {
-        if (serverInfo.has(message.guild.id)) {
-            return message.reply("L'accès à la recherche est déjà active.") && console.log("L'accès à la recherche est déjà active.");
-        }
-
-        serverInfo.set(message.guild.id, {
-            activeCheck: true,
-            channelId: message.channel.id,
-            userMention: `<@${message.author.id}>`,
-        });
-
-        saveServerInfoToFile();
-
-        console.log('Accès à la recherche activé.');
-        message.reply('Accès à la recherche activé.');
-    } else if (command === 'stop') {
-        if (!serverInfo.has(message.guild.id)) {
-            return message.reply('Aucune recherche active à arrêter.') && console.log('Aucune recherche active à arrêter.');
-        }
-
-        serverInfo.delete(message.guild.id);
-
-        saveServerInfoToFile();
-
-        message.reply('Accès à la recherche désactivée.');
-        console.log('Accès à la recherche désactivée.');
-    }
-});
 
 async function performCheck() {
     if (!browserInstance || !browserInstance.isConnected()) {
@@ -78,7 +44,7 @@ async function performCheck() {
         console.log("Création de l'instance de la page.");
         const url = 'https://tickets.rugbyworldcup.com/fr';
         page = await browserInstance.newPage();
-        await page.goto(url, { waitUntil: 'networkidle2' });
+        await page.goto(url, { waitUntil: 'networkidle0' });
         console.log("Fait.");
     }
 
@@ -111,7 +77,7 @@ async function performCheck() {
 async function findChanges(browserInstance, page) {
     try {
         console.log("Reloading...");
-        await page.reload({ waitUntil: 'networkidle2' });
+        await page.reload({ waitUntil: 'networkidle0' });
         console.log("Page chargée avec succès.");
     } catch (error) {
         console.error("Impossible de reloading : ", error)
@@ -141,15 +107,16 @@ async function findChanges(browserInstance, page) {
     
         return matchInfo;
     });
-    
-    // Charger les anciennes informations depuis le fichier JSON (s'il existe)
-    let oldMatchInfo = [];
-    try {
-        const oldMatchInfoJson = await fs.readFile('old_match_info.json', 'utf-8');
-        oldMatchInfo = JSON.parse(oldMatchInfoJson);
-    } catch (error) {
-        // Le fichier n'existe pas ou ne peut pas être lu
-    }
+
+    console.log("Loading MongoDB");
+    const oldMatchInfo = await loadMatchInfo();
+
+    console.log("________________");
+    console.log("________________");
+    console.log("________________");
+    console.log("________________");
+    console.log('Anciennes informations des matchs:', oldMatchInfo);
+    console.log('Nouvelles informations des matchs:', matchInfo);
     
     // Comparer les nouvelles et anciennes informations pour détecter les changements
     const changes = matchInfo.filter(newMatch => {
@@ -158,20 +125,13 @@ async function findChanges(browserInstance, page) {
     });
 
     
-    // Stocker les nouvelles informations pour les futures comparaisons
-    await fs.writeFile('old_match_info.json', JSON.stringify(matchInfo, null, 2));
-
-    // Maintenant vous pouvez utiliser $ pour manipuler le HTML
-    console.log("Informations des matchs:", matchInfo);
-    console.log("________________");
-    console.log("________________");
-    console.log("________________");
-    console.log("________________");
+    await saveMatchInfo(matchInfo);
 
     return changes;
 
     } catch (error) {
         console.error("Une erreur s'est produite dans findChanges(): ", error);
+        await browserInstance.close();
     }
 }
 
@@ -189,44 +149,46 @@ async function sendChangeMessages(channel, userMention, changes) {
 
     // Envoi des changements dans le salon Discord s'il y en a
     if (changes.length > 0) {
-        const changesMessageName = changes.map(match => {
-            const teams = match.teams.join('_').toLowerCase();
-            return `/${teams}`;
-        }).join('\n');
-
-        const changesMessageLink = changes.map(match => {
-            const teams = match.teams.join('_').toLowerCase(); // Génère "equipe1_equipe2"
-            const teamsFormatted = formatPhaseName(teams)
-            const name = formatPhaseName(match.nameMatch);
-            let reventeLink = '';
-
-            if (teams.includes('vainqueur' || 'finaliste')) {
-                // Gérer les liens pour les phases finales (quart de finale, demi-finale, finale)
-                reventeLink = `/revente_${name}`;
-            } else {
-                // Gérer les liens pour les matchs de poule
-                reventeLink = `/revente_${teamsFormatted}`;
-            }
-            return "https://tickets.rugbyworldcup.com" + reventeLink;
-        }).join('\n');
-
-        console.log(changesMessageName);
-
-        const embed = new MessageEmbed()
-        .setColor(0x00FF00)
-        .setTitle('Nouveau billet')
-        .setURL(changesMessageLink)
-        .setDescription("Un billet a été mis en vente à l'instant !")
-        .addFields(
-            { name: 'Equipes', value: `**${changesMessageName}**` },
-        )
-        .setTimestamp()
-
-        channel.send(`${userMention} Voici les changements détectés :`)
-        channel.send({ embeds: [embed] });
-        console.log("Messages envoyés.")
+        changes.forEach((change) => {
+            const changesMessageName = (() => {
+                const teams = change.teams.join('_').toLowerCase();
+                return `/${teams}`;
+            })
+    
+            const changesMessageLink = (() => {
+                const teams = change.teams.join('_').toLowerCase(); // Génère "equipe1_equipe2"
+                const teamsFormatted = formatPhaseName(teams)
+                const name = formatPhaseName(change.nameMatch);
+                let reventeLink = '';
+    
+                if (teams.includes('vainqueur' || 'finaliste')) {
+                    // Gérer les liens pour les phases finales (quart de finale, demi-finale, finale)
+                    reventeLink = `/revente_${name}`;
+                } else {
+                    // Gérer les liens pour les matchs de poule
+                    reventeLink = `/revente_${teamsFormatted}`;
+                }
+                return "https://tickets.rugbyworldcup.com/" + reventeLink;
+            })
+    
+            console.log(changesMessageName);
+    
+            const embed = new MessageEmbed()
+            .setColor(0x00FF00)
+            .setTitle('Nouveau billet')
+            .setURL(changesMessageLink())
+            .setDescription("Un billet a été mis en vente à l'instant !")
+            .addFields(
+                { name: 'Equipes', value: `**${changesMessageName()}**` },
+            )
+            .setTimestamp()
+    
+            channel.send(`${userMention} Voici les changements détectés :`)
+            channel.send({ embeds: [embed] });
+            console.log("Messages envoyés.")
+        })
+        }
     }
-}
 
 // Au démarrage du bot, charger les données depuis le fichier JSON
 async function loadServerInfo() {
@@ -243,19 +205,45 @@ async function loadServerInfo() {
         console.error('Erreur lors du chargement des données depuis le fichier JSON :', error);
     }
 }
-// Après chaque modification de serverInfo, sauvegarder dans le fichier JSON
-async function saveServerInfoToFile() {
-    const dataToSave = {};
-
-    serverInfo.forEach((info, serverId) => {
-        dataToSave[serverId] = info;
-    });
+async function saveMatchInfo(matchInfo) {
+    const client = new MongoClient(mongoUrl, { useUnifiedTopology: true });
 
     try {
-        await fs.writeFile('server_info.json', JSON.stringify(dataToSave, null, 2), 'utf-8');
-        console.log('Données sauvegardées dans le fichier JSON.');
+        await client.connect();
+
+        const database = client.db('ClusterDiscord'); // Remplacez 'mydb' par le nom de votre base de données
+        const collection = database.collection('match_info');
+
+        // Supprimez les anciennes données
+        await collection.deleteMany();
+
+        // Insérez les nouvelles données
+        await collection.insertMany(matchInfo);
+
+        console.log('Match info saved to MongoDB.');
     } catch (error) {
-        console.error('Erreur lors de la sauvegarde des données dans le fichier JSON :', error);
+        console.error('Error saving match info to MongoDB:', error);
+    } finally {
+        await client.close();
+    }
+}
+
+async function loadMatchInfo() {
+    const client = new MongoClient(mongoUrl, { useUnifiedTopology: true });
+
+    try {
+        await client.connect();
+
+        const database = client.db('ClusterDiscord'); // Remplacez 'mydb' par le nom de votre base de données
+        const collection = database.collection('match_info');
+
+        const matchInfo = await collection.find().toArray();
+        return matchInfo;
+    } catch (error) {
+        console.error('Error loading match info from MongoDB:', error);
+        return [];
+    } finally {
+        await client.close();
     }
 }
 
