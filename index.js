@@ -139,10 +139,8 @@ function formatPhaseName(phaseName) {
     // Supprimer les espaces et convertir en minuscules
     let formattedName = phaseName.replace(/\s+/g, '_').toLowerCase();
 
-    formattedName.replace(/é/g, 'e');
-
     // Supprimer les caractères non alphanumériques
-    return formattedName.replace(/[^a-zA-Z0-9_]/g, '');
+    return formattedName.replace(/-/g, '_').replace(/é/g, 'e').replace(/[^a-zA-Z0-9_]/g, '');
 }
 
 async function sendChangeMessages(channel, userMention, changes) {
@@ -168,7 +166,7 @@ async function sendChangeMessages(channel, userMention, changes) {
                     // Gérer les liens pour les matchs de poule
                     reventeLink = `/revente_${teamsFormatted}`;
                 }
-                return "https://tickets.rugbyworldcup.com";
+                return "https://tickets.rugbyworldcup.com/fr" + reventeLink;
             })
     
             console.log(changesMessageName);
