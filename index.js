@@ -5,6 +5,7 @@ const puppeteer = require('puppeteer');
 require('dotenv').config()
 
 const fs = require('fs/promises'); // Module pour gérer les fichiers (disponible dans les versions récentes de Node.js)
+const { formatWithOptions } = require('util');
 
 const client = new Client({ intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MESSAGES] });
 
@@ -137,10 +138,15 @@ async function findChanges(browserInstance, page) {
 
 function formatPhaseName(phaseName) {
     // Supprimer les espaces et convertir en minuscules
-    let formattedName = phaseName.replace(/\s+/g, '_').toLowerCase();
+    formattedName = phaseName.toLowerCase();
+
+    formattedName = formattedName.replace(/ /g, '_');
+
+    // Remove spaces around numbers
+    formattedName = formattedName.replace(/_(\d)/g, '$1').replace(/-/g, '_').replace(/é/g, 'e').replace(/[^a-zA-Z0-9_]/g, '');
 
     // Supprimer les caractères non alphanumériques
-    return formattedName.replace(/-/g, '_').replace(/é/g, 'e').replace(/[^a-zA-Z0-9_]/g, '');
+    return formattedName;
 }
 
 async function sendChangeMessages(channel, userMention, changes) {
@@ -159,9 +165,11 @@ async function sendChangeMessages(channel, userMention, changes) {
                 const name = formatPhaseName(change.nameMatch);
                 let reventeLink = '';
     
-                if (teams.includes('vainqueur' || 'finaliste')) {
+                if (teams.includes('vainqueur')) {
                     // Gérer les liens pour les phases finales (quart de finale, demi-finale, finale)
                     reventeLink = `/revente_${name}`;
+                } else if (teams.includes('finaliste')) {
+                    reventeLink = `/revente_${name}`
                 } else {
                     // Gérer les liens pour les matchs de poule
                     reventeLink = `/revente_${teamsFormatted}`;
