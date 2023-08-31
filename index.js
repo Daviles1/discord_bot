@@ -45,7 +45,7 @@ async function performCheck() {
         console.log("Création de l'instance de la page.");
         const url = 'https://tickets.rugbyworldcup.com/fr';
         page = await browserInstance.newPage();
-        await page.goto(url, { waitUntil: 'networkidle0' });
+        await page.goto(url, { waitUntil: 'domcontentloaded' });
         console.log("Fait.");
     }
 
@@ -78,7 +78,7 @@ async function performCheck() {
 async function findChanges(browserInstance, page) {
     try {
         console.log("Reloading...");
-        await page.reload({ waitUntil: 'networkidle0' });
+        await page.reload({ waitUntil: 'domcontentloaded' });
         console.log("Page chargée avec succès.");
     } catch (error) {
         console.error("Impossible de reloading : ", error)
