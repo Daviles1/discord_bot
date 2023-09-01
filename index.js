@@ -85,7 +85,7 @@ async function findChanges(browserInstance, page) {
     }
   
     // Attendre un certain temps pour que le contenu soit chargé (vous pouvez ajuster le temps)
-    await new Promise(resolve => setTimeout(resolve, 8000));
+    await new Promise(resolve => setTimeout(resolve, 15000));
   
     try {
 
