@@ -167,25 +167,26 @@ async function sendChangeMessages(channel, userMention, changes) {
     
                 if (teams.includes('vainqueur')) {
                     // Gérer les liens pour les phases finales (quart de finale, demi-finale, finale)
-                    reventeLink = `/revente_${name}`;
+                    reventeLink = `${name}`;
                 } else if (teams.includes('finaliste')) {
-                    reventeLink = `/revente_${name}`
+                    reventeLink = `${name}`
                 } else {
                     // Gérer les liens pour les matchs de poule
-                    reventeLink = `/revente_${teamsFormatted}`;
+                    reventeLink = `${teamsFormatted}`;
                 }
-                return "https://tickets.rugbyworldcup.com/fr" + reventeLink;
+                return reventeLink;
             })
     
             console.log(changesMessageName);
     
             const embed = new MessageEmbed()
             .setColor(0x00FF00)
-            .setTitle('Nouveau billet')
-            .setURL(changesMessageLink())
+            .setTitle('Nouveau billet / Revente')
+            .setURL(`https://tickets.rugbyworldcup.com/fr/revente_${changesMessageLink()}`)
             .setDescription("Un billet a été mis en vente à l'instant !")
             .addFields(
-                { name: 'Equipes', value: `**${changesMessageName()}**` },
+                { name: 'Equipes: ', value: `**${changesMessageName()}**`, inline: true },
+                { name: 'Lien de billetterie officielle ?', value: `[Lien de billetterie officielle ?](https://tickets.rugbyworldcup.com/fr/${changesMessageLink()}_famille2023)`, inline: true }
             )
             .setTimestamp()
     
