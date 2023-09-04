@@ -69,8 +69,6 @@ async function performCheck() {
         });
     } catch (error) {
         console.error("Une erreur s'est produite dans performCheck()", error);
-    } finally {
-        await browserInstance.close();
     }
   
     // Planifier la prochaine vérification après un délai
