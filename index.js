@@ -91,7 +91,7 @@ async function findChanges(browserInstance, page) {
 
     const matchInfo = await page.evaluate(() => {
         const matchElements = document.querySelectorAll('.match-label'); // Sélectionnez les éléments de match
-        const availabilityElements = document.querySelectorAll('.actions-wrapper .noloader'); 
+        const availabilityElements = document.querySelectorAll('.actions-wrapper > .btn.btn-primary'); 
         const nameMatches = document.querySelectorAll('.d-lg-none.match-info-mobile .competition-additional')
 
         const matchInfo = [];
@@ -100,7 +100,7 @@ async function findChanges(browserInstance, page) {
             const teamElements = matchElements[i].querySelectorAll('.team'); // Sélectionnez les éléments d'équipe
             const teams = Array.from(teamElements).map(team => team.textContent.trim());   
             // Vérifiez la classe pour déterminer l'accessibilité
-            const isAvailable = availabilityElements[i].classList.contains('js-show-offers');
+            const isAvailable = availabilityElements[i].classList.contains('js-show-offers') || availabilityElements[i].classList.contains('available');;
             const availability = isAvailable ? 'Voir les offres' : 'Non disponible';
             const nameMatch = nameMatches[i].textContent.trim();
             matchInfo.push({ teams, availability, nameMatch });
@@ -108,6 +108,7 @@ async function findChanges(browserInstance, page) {
     
         return matchInfo;
     });
+
 
     console.log("Loading MongoDB");
     const oldMatchInfo = await loadMatchInfo();
