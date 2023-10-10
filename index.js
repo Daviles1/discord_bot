@@ -161,21 +161,21 @@ async function sendChangeMessages(channel, userMention, changes) {
             })
     
             const changesMessageLink = (() => {
-                const teams = change.teams.join('_').toLowerCase(); // Génère "equipe1_equipe2"
-                const teamsFormatted = formatPhaseName(teams)
+                // const teams = change.teams.join('_').toLowerCase(); // Génère "equipe1_equipe2"
+                // const teamsFormatted = formatPhaseName(teams)
                 const name = formatPhaseName(change.nameMatch);
-                let reventeLink = '';
+                // let reventeLink = '';
     
-                if (teams.includes('vainqueur')) {
-                    // Gérer les liens pour les phases finales (quart de finale, demi-finale, finale)
-                    reventeLink = `${name}`;
-                } else if (teams.includes('finaliste')) {
-                    reventeLink = `${name}`
-                } else {
-                    // Gérer les liens pour les matchs de poule
-                    reventeLink = `${teamsFormatted}`;
-                }
-                return reventeLink;
+                // if (teams.includes('vainqueur')) {
+                //     // Gérer les liens pour les phases finales (quart de finale, demi-finale, finale)
+                //     reventeLink = `${name}`;
+                // } else if (teams.includes('finaliste')) {
+                //     reventeLink = `${name}`
+                // } else {
+                //     // Gérer les liens pour les matchs de poule
+                //     reventeLink = `${teamsFormatted}`;
+                // }
+                return name;
             })
     
             console.log(changesMessageName);
